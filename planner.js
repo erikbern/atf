@@ -61,6 +61,12 @@ Planner.prototype.getTasks = function(tasks) {
   return Promise.all(taskPromises);
 }
 
+Planner.prototype.cancel = function() {
+  for (id in this._tasks) {
+    this._tasks[id].cancel();
+  }
+}
+
 var Scope = function(task, planner) {
   this._task = task;
   this._planner = planner;
@@ -68,8 +74,12 @@ var Scope = function(task, planner) {
 
 Scope.prototype.require = function() {
   var reqs = [];
-  for (var i = 0; i < arguments.length; i++)
-    reqs.push(arguments[i]);
+  if (arguments.length == 1 && Array.isArray(arguments[0])) {
+    reqs = arguments[0];
+  } else {
+    for (var i = 0; i < arguments.length; i++)
+      reqs.push(arguments[i]);
+  }
   
   console.log(this._task.id + ' needs ' + reqs.map(function(task) { return task.id; }));
 
