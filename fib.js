@@ -21,11 +21,8 @@ var AskUserForN = Task.createClass('AskUserForN', [], function(scope) {
 
 var TellUserFib = Task.createClass('TellUserFib', [], function(scope) {
   return scope.require(new AskUserForN()).spread(function(t) {
-    return t.n;
-  }).then(function(n) {
-    return scope.require(new Fib(n));
+    return scope.require(new Fib(t.n));
   }).spread(function(f) {
-    console.log('result is: ' + f.result);
     return {'result': f.result};
   });
 });
