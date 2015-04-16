@@ -20,14 +20,16 @@ var AskUserForN = Task.createClass('AskUserForN', [], function(scope) {
 });
 
 var TellUserFib = Task.createClass('TellUserFib', [], function(scope) {
-  scope.require(new AskUserForN()).spread(function(t) {
+  return scope.require(new AskUserForN()).spread(function(t) {
     return t.n;
   }).then(function(n) {
     return scope.require(new Fib(n));
   }).spread(function(f) {
     console.log('result is: ' + f.result);
+    return {'result': f.result};
   });
 });
 
 var planner = new Planner();
 planner.run(new TellUserFib());
+planner.cancel();

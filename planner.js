@@ -28,17 +28,14 @@ Planner.prototype._runSingle = function(task, rerun) {
 
   console.log('Running task ' + task.id);
   var result = task.run(scope);
-  if (result instanceof Promise) {
-    result.then(function(result) {
-      console.log('Got results from ' + task.id + ': ' + JSON.stringify(result));
-      planner._facts[task.id] = result;
-      resolver.resolve(result);
-    });
-  } else {
-    console.log('Got results from ' + task.id);
-    this._facts[task.id] = result;
+  if (!(result instanceof Promise))
+    result = Promise.resolve(result);
+
+  result.then(function(result) {
+    console.log('Got results from ' + task.id + ': ' + JSON.stringify(result));
+    planner._facts[task.id] = result;
     resolver.resolve(result);
-  }
+  });
 
   return resolver.promise;
 }
