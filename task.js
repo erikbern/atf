@@ -1,6 +1,6 @@
 var Task = function() { }
 
-Task.createClass = function(name, params, run) {
+Task._createSubclass = function(name, params) {
   var Subclass = function() {
     this.requirements = [];
     this.id = name + '(';
@@ -10,11 +10,16 @@ Task.createClass = function(name, params, run) {
       if (i < params.length - 1) this.id += ', ';
     }
     this.id += ')';
-    this.run = run;
   }
 
   Subclass.prototype = new Task();
   return Subclass;
+}
+
+Task.backend = function(name, params, run) {
+  var taskClass = Task._createSubclass(name, params);
+  taskClass.prototype.run = run;
+  return taskClass;
 };
 
 module.exports = Task;
