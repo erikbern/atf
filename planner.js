@@ -1,24 +1,21 @@
 var Task = require('./task'),
     Promise = require('bluebird');
 
-var Planner = function() {
-  this._facts = {}; // task -> fact -> value
+var Planner = function(model) {
   this._tasks = {}; // a bunch of resolvers
   this._views = [];
+  this._model = model
 }
 
 Planner.prototype._runSingle = function(task, rerun) {
-  /* Possibilities for a task
-     - It's already run 
-       - Then just return the results
-     - It throws another task
-       - Schedule this task
-       - 
-  */
-
-  if (!rerun && this._tasks[task.id]) {
-    // It's already scheduled/running/finished
-    return this._tasks[task.id].promise;
+  if (!rerun) {
+    var saved = this._model.getFacts(task.id);
+    if (saved)
+      // It's already run previously
+      return Promise.fulfilled(saved);
+    if (this._tasks[task.id])
+      // It's already scheduled/running
+      return this._tasks[task.id].promise;
   }
 
   var resolver = Promise.pending();
@@ -28,6 +25,7 @@ Planner.prototype._runSingle = function(task, rerun) {
 
   if (task.isView) {
     this._views.push(task);
+    console.log('now has ' + this._views.length + ' views');
     return resolver.promise; // Return a promise that will never be fulfilled
   }
   
@@ -41,7 +39,7 @@ Planner.prototype._runSingle = function(task, rerun) {
 
   result.then(function(result) {
     console.log('Got results from ' + task.id + ': ' + JSON.stringify(result));
-    planner._facts[task.id] = result;
+    planner._model.saveFacts(task.id, result);
     resolver.resolve(result);
   });
 
@@ -50,14 +48,15 @@ Planner.prototype._runSingle = function(task, rerun) {
 
 Planner.prototype.run = function(task) {
   this._runSingle(task);
+  console.log('got ' + this._views.length + ' views');
+}
+
+Planner.prototype.getViews = function() {
   return this._views;
 }
 
 Planner.prototype.getFacts = function(task) {
-  if (this._facts[task.id])
-    return this._facts[task.id];
-  else
-    throw task;
+  return this._model.getFacts(task.id);
 }
 
 Planner.prototype.getTasks = function(tasks) {
@@ -88,8 +87,9 @@ Scope.prototype.require = function() {
   }
   
   console.log(this._task.id + ' needs ' + reqs.map(function(task) { return task.id; }));
-
-  return this._planner.getTasks(reqs);
+  var results = this._planner.getTasks(reqs);
+  console.log('got result promises');
+  return results;
 }
 
 module.exports = Planner;

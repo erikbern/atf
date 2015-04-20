@@ -1,6 +1,5 @@
-var express = require('express'),
-    Task = require('./task'),
-    Planner = require('./planner');
+var Task = require('./task'),
+    Server = require('./server');
 
 var Define = Task.view('Define', ['symbol'], function(scope) {
   var str = [];
@@ -11,17 +10,17 @@ var Define = Task.view('Define', ['symbol'], function(scope) {
   return str.join('');
 },
 function(data) {
-  console.log('controller!');
+  // console.log(data);
   return {'definition': data['definition']};
 });
 
 var Evaluate = Task.backend('Evaluate', ['symbol'], function(scope) {
   var task = this;
-  return scope.require(new Define(task.symbol)).spread(function (input) {
-    if (!isNaN(parseInt(input)))
-      return {'result': parseInt(input)};
+  return scope.require(new Define(task.symbol)).spread(function (define) {
+    if (!isNaN(parseInt(define.definition)))
+      return {'result': parseInt(define.definition)};
 
-    var tokens = input.split(' ');
+    var tokens = define.definition.split(' ');
     return scope.require(tokens.map(function(token) { return new Evaluate(token); })).then(function (results) {
       var sum = results.reduce(function(x, y) { return x + y.result; }, 0);
       return {'result': sum}
@@ -29,40 +28,5 @@ var Evaluate = Task.backend('Evaluate', ['symbol'], function(scope) {
   });
 });
 
-//////// glue stuff
-
-function nextTask(res) {
-  var planner = new Planner();
-  var views = planner.run(new Evaluate('x'));
-  var view = views[0]; // For now just pick an arbitrary view
-  var uri = view.uri();
-  res.redirect(uri);
-  planner.cancel();
-}
-
-//////// server stuff
-
-var app = express();
-
-app.get('/', function (req, res) {
-  nextTask(res);
-});
-
-app.get('/task/*', function (req, res) {
-  var view = Task.viewFromUrl(req.url);
-  res.send(view.view());
-});
-
-app.post('/task/*', function (req, res) {
-  var view = Task.viewFromUrl(req.url);
-  view.controller(req);
-  nextTask(res);
-});
-
-var server = app.listen(3000, function () {
-
-  var host = server.address().address;
-  var port = server.address().port;
-
-  console.log('Example app listening at http://%s:%s', host, port);
-});
+var goalTask = new Evaluate('x');
+var server = new Server(goalTask);
