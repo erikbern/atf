@@ -4,6 +4,7 @@ var Task = require('./task'),
 var Planner = function() {
   this._facts = {}; // task -> fact -> value
   this._tasks = {}; // a bunch of resolvers
+  this._views = [];
 }
 
 Planner.prototype._runSingle = function(task, rerun) {
@@ -22,6 +23,13 @@ Planner.prototype._runSingle = function(task, rerun) {
 
   var resolver = Promise.pending();
   this._tasks[task.id] = resolver;
+
+  console.log(task.id + ' ' + task.isView);
+
+  if (task.isView) {
+    this._views.push(task);
+    return resolver.promise; // Return a promise that will never be fulfilled
+  }
   
   var scope = new Scope(task, this);
   var planner = this;
@@ -42,6 +50,7 @@ Planner.prototype._runSingle = function(task, rerun) {
 
 Planner.prototype.run = function(task) {
   this._runSingle(task);
+  return this._views;
 }
 
 Planner.prototype.getFacts = function(task) {
