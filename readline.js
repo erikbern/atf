@@ -8,10 +8,11 @@ prompt.start();
 var readline = Promise.promisify(prompt.get);
 var nextLinePromise = Promise.resolve(undefined);
 
-function readNextLine() {
-  var args = arguments;
+function readNextLine(arg) {
   nextLinePromise = nextLinePromise.then(function() {
-    return readline.apply(null, args);
+    return readline(arg).then(function(r) {
+      return r[arg];
+    });
   });
   return nextLinePromise;
 }

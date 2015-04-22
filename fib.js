@@ -1,4 +1,5 @@
 var Task = require('./task'),
+    Model = require('./model'),
     Planner = require('./planner'),
     Promise = require('bluebird'),
     readline = require('./readline');
@@ -13,7 +14,9 @@ var Fib = Task.backend('Fib', ['n'], function(scope) {
 });
 
 var AskUserForN = Task.backend('AskUserForN', [], function(scope) {
-  return readline('n');
+  return readline('n').then(function(n) {
+    return {'n': n};
+  });
 });
 
 var TellUserFib = Task.backend('TellUserFib', [], function(scope) {
@@ -24,6 +27,7 @@ var TellUserFib = Task.backend('TellUserFib', [], function(scope) {
   });
 });
 
-var planner = new Planner();
+var model = new Model();
+var planner = new Planner(model);
 planner.run(new TellUserFib());
 planner.cancel();
