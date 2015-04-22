@@ -10,20 +10,31 @@ var Define = Task.view('Define', ['symbol'], function(scope) {
   return str.join('');
 },
 function(data) {
-  // console.log(data);
   return {'definition': data['definition']};
 });
 
 var Evaluate = Task.backend('Evaluate', ['symbol'], function(scope) {
   var task = this;
   return scope.require(new Define(task.symbol)).spread(function (define) {
-    if (!isNaN(parseInt(define.definition)))
-      return {'result': parseInt(define.definition)};
+    var def = define.definition;
+    
+    // Let's first extract all tokens from this string
+    var tokens = def.match(/[A-Za-z]+/g);
 
-    var tokens = define.definition.split(' ');
+    // If no tokens, just return the value
+    if (tokens == null) {
+      var result = eval(def);
+      return {'result': result}
+    }
+
     return scope.require(tokens.map(function(token) { return new Evaluate(token); })).then(function (results) {
-      var sum = results.reduce(function(x, y) { return x + y.result; }, 0);
-      return {'result': sum}
+      // Insert all tokens into the definition
+      for (var i = 0; i < results.length; i++)
+	def = def.replace(tokens[i], results[i].result);
+
+      // Evaluate everything
+      var result = eval(def);
+      return {'result': result}
     });
   });
 });
